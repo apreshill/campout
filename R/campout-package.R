@@ -1,8 +1,8 @@
 #' @keywords internal
 #' @import dplyr stringr
-#' @importFrom usethis create_package
-#' @importFrom fs dir_ls path_file
-#' @import git2r
+#' @import usethis
+#' @import fs
+#' @importFrom git2r in_repository status
 "_PACKAGE"
 
 # The following block is used by usethis to automatically manage

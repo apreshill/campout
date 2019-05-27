@@ -1,25 +1,32 @@
-
-datacamp_to_learnr <- function(.repo, rename=NULL, author_name="Default") {
+#' datacamp_to_learnr
+#'
+#'
+#' @export
+datacamp_to_learnr <- function(cur_path=NULL, rename=NULL, author_name="Default", has_data=T) {
   # TODO: Check if working dir is a repo
   # TODO: Check if any uncommitted files are present
   # TODO: Check that the necessary files exist
   # TODO: Check if a "original materials" git branch exists
 
 options(usethis.quiet = TRUE)
+
+if(is.null(cur_path)){
+  cur_path=getwd()
+}
 #
 # # For accidental sourcing... -_-
 # stop()
 #
 # # Checking if project is under git and if changes are not committed
-if (!in_repository())
+if (!in_repository(cur_path))
     stop("Please make that the files are under Git version control.")
-if (length(status()$unstaged)!=0)
+if (length(status(cur_path)$unstaged)!=0)
     stop("Please make sure to commit changes before running.")
 #
 # # Listing all files -------------------------------------------------------
 
 ## needs to check to see if there are dashes in the folder name
-cur_path <- getwd()
+
 pkgname <- tail(strsplit(cur_path, "/")[[1]], 1)
 if(grepl("-", pkgname)){
   if(is.null(rename)){
@@ -34,9 +41,9 @@ if(grepl("-", pkgname)){
   new_path <- paste(new_path, collapse=.Platform$file.sep)
   new_path <- file.path(new_path, pkgname)
   file.rename(cur_path, new_path)
-  setwd(new_path)
   cur_path <- new_path
 }
+setwd(cur_path)
 pkgname <- paste(pkgname, ".Rproj", sep="")
 
 all_files <- dir_ls(cur_path, recurse = TRUE, type = "file", all = TRUE)
@@ -53,7 +60,9 @@ if(length(proj_name)==0){
 
 
 create_package(path_dir(proj_name))
-use_data_raw()
+if(has_data){
+  use_data_raw(open=F)
+}
 
 chapters <- str_subset(all_files, "chapter.\\.md")
 
@@ -69,7 +78,7 @@ file_move(chapters, new_chapter_path)
 
 use_build_ignore("slides")
 use_tidy_versions()
-use_github_links()
+use_github_links(overwrite=T)
 use_mit_license(name=author_name)
 use_blank_slate()
 }
