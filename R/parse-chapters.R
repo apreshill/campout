@@ -162,38 +162,29 @@ lrnr_convert_code_exercises <- function(.lines) {
     pull("Lines")
 }
 
-lrnr_tidy_document <- function(.lines) {
-#     mutate(
-#         LinesModified = LinesModified %>%
-#             str_remove("^(key|xp|lang|skills):.*$") %>%
-#             str_remove("^type: .*$") %>%
-#             str_remove("^`+yaml.*$") %>%
-#             str_remove("^`\\@.*`.*$"),
-#         # Replace instructions tag with bold "instructions" text
-#         Lines = if_else(
-#             str_detect(Lines, "^`@instructions`.*$"),
-#             "**Instructions**:",
-#             Lines
-#         ),
-#     ) %>%
-#     mutate(
-#         LinesModified = if_else(
-#                 grepl("^$", lag(LinesModified)) & grepl("^$", lead(LinesModified)) &
-#                     grepl("^---$", LinesModified),
-#                 "",
-#                 LinesModified
-#         ),
-#         # TODO: Fix this, it doesn't work for some reason
-#         LinesModified = if_else(
-#                 grepl("^$", lag(LinesModified)) & grepl("^$", lead(LinesModified)) &
-#                     grepl("^```$", LinesModified, perl = TRUE),
-#                 "",
-#                 LinesModified
-#         )
-#     ) %>%
-#     # pull(LinesModified)
-#     View()
+lrnr_tidy_chapter <- function(.lines) {
+  .lines %>%
+    # Replace instructions tag with bold "instructions" text
+    chpt_modify_yaml() %>%
+    chpt_modify_instruction_name() %>%
+    chpt_remove_extraneous_lines() %>%
+    chpt_remove_extra_separators() %>%
+    chpt_remove_extra_backticks()
 }
 
-#     lrnr_convert_hint() %>%
-#     lrnr_convert_code_exercises() %>%
+lrnr_write_tutorial <- function(.lines, .chapter_md) {
+  new <- str_c(fs::path_ext_remove(.chapter_md), "-tutorial.Rmd")
+  readr::write_lines(.lines, new)
+
+  return(invisible(NULL))
+}
+
+dc_chapter_to_lrnr_tutorial <- function(.chapter_md) {
+  readr::read_lines(.chapter_md) %>%
+    lrnr_convert_hint() %>%
+    lrnr_convert_code_exercises() %>%
+    lrnr_append_code_preamble() %>%
+    lrnr_append_yaml_output() %>%
+    lrnr_tidy_chapter() %>%
+    lrnr_write_tutorial(.chapter_md = .chapter_md)
+}
