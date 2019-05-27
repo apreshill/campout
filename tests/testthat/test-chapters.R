@@ -91,3 +91,24 @@ test_that("code backticks are replaced with empty string", {
 
   expect_identical(actual_without_backticks, expected_without_backticks)
 })
+
+
+# readr::read_lines("tests/testthat/chapter1.md") %>%
+#   lrnr_append_yaml_output() %>%
+#   head(10)
+#
+#
+#   # chpt_extract_mcq_responses() %>%
+#   str_flatten("NEWLINE") %>%
+#     str_extract("@possible\\_answers.*`@")
+# str_re
+#
+# c(letters, letters) %>%
+#   str_flatten("\n") %>%
+#   str_extract("a.*j")
+#
+# test_that("chapter is converted to tutorial", {
+#   dc_chapter_to_lrnr_tutorial("tests/testthat/chapter1.md")
+#
+#   expect_
+# })
