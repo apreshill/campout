@@ -56,6 +56,22 @@ chpt_remove_extra_backticks <- function(.lines) {
   )
 }
 
+chpt_modify_instruction_name <- function(.lines) {
+  if_else(str_detect(.lines, "^`@instructions`.*$"),
+          "**Instructions**:",
+          .lines)
+}
+
+chpt_modify_dataset <- function(.lines) {
+  .lines %>%
+    str_replace("^load.*?http.*datasets.*/(.*\\.[rR]da).*$", "load(\\1)")
+}
+
+chpt_modify_yaml <- function(.lines) {
+  .lines %>%
+    str_remove("^free_preview: true$")
+}
+
 lrnr_convert_hint <- function(.lines) {
   tibble(Lines = .lines) %>%
     mutate_at("Sections", ~extract_exercise_sections(Lines)) %>%
