@@ -1,21 +1,16 @@
 
 
-# read_chapter <- function(chapter)
-
-# chapters <- str_subset(all_files, "chapter.\\.md")
-
-# library(tidyverse)
+# Mostly generic string wranglers -----------------------------------------
 
 
-
-extract_exercise_type <- function(.lines) {
+chpt_extract_exercise_type <- function(.lines) {
   .lines %>%
     str_extract("^type: .*$") %>%
     str_remove("type: ") %>%
     str_trim()
 }
 
-extract_exercise_sections <- function(.lines) {
+chpt_extract_exercise_sections <- function(.lines) {
   .lines %>%
     # Don't want to include this in the sections
     str_remove("^`@instructions`.*$") %>%
@@ -24,7 +19,7 @@ extract_exercise_sections <- function(.lines) {
     str_trim()
 }
 
-extract_exercise_name <- function(.lines) {
+chpt_extract_exercise_name <- function(.lines) {
   .lines %>%
     str_extract("## .*$") %>%
     str_remove("## ") %>%
