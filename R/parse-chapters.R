@@ -72,6 +72,21 @@ chpt_modify_yaml <- function(.lines) {
     str_remove("^free_preview: true$")
 }
 
+# Parsing MCQ text --------------------------------------------------------
+
+# glue::glue_data("answer({possible_answers}, correct = {correct}, message = {message}))")
+
+# glue::glue("
+# question('',
+# ")
+
+chpt_extract_mcq_responses <- function(.lines) {
+  .lines %>%
+    str_flatten("\\n")
+  # %>%
+  #   str_extract_all("@possible\\_answers.*@")
+}
+
 lrnr_convert_hint <- function(.lines) {
   tibble(Lines = .lines) %>%
     mutate_at("Sections", ~extract_exercise_sections(Lines)) %>%
