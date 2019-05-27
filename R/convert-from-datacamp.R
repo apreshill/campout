@@ -8,7 +8,7 @@ datacamp_to_learnr <- function(cur_path=NULL, rename=NULL, author_name="Default"
   # TODO: Check that the necessary files exist
   # TODO: Check if a "original materials" git branch exists
 
-options(usethis.quiet = TRUE)
+# options(usethis.quiet = TRUE)
 
 if(is.null(cur_path)){
   cur_path=getwd()
@@ -43,7 +43,6 @@ if(grepl("-", pkgname)){
   file.rename(cur_path, new_path)
   cur_path <- new_path
 }
-setwd(cur_path)
 pkgname <- paste(pkgname, ".Rproj", sep="")
 
 all_files <- dir_ls(cur_path, recurse = TRUE, type = "file", all = TRUE)
@@ -61,7 +60,7 @@ if(length(proj_name)==0){
 
 create_package(path_dir(proj_name))
 if(has_data){
-  use_data_raw(open=F)
+  use_data_raw(open=F) ### will need to be done within right directory
 }
 
 chapters <- str_subset(all_files, "chapter.\\.md")
@@ -75,7 +74,7 @@ if(!dir_exists(path_dir(new_chapter_path)[1])){
 
 file_move(chapters, new_chapter_path)
 
-
+### will need to be done within right directory
 use_build_ignore("slides")
 use_tidy_versions()
 use_github_links(overwrite=T)
