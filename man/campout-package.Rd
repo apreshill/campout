@@ -26,5 +26,10 @@ Authors:
   \item Alison Hill
 }
 
+Other contributors:
+\itemize{
+  \item Kevin Reuning \email{kevin.reuning@gmail.com} (0000-0003-0022-6301)
+}
+
 }
 \keyword{internal}
