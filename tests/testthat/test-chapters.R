@@ -73,3 +73,21 @@ test_that("code exercises are converted to learnr style", {
   # Submission correction tests code chunks
   expect_equal(sum(str_detect(code_ex_conversion, "```\\{r .*-check\\}")), 9)
 })
+
+test_that("dashed separators are replaced with empty string", {
+  with_separators <- c(letters, "", "---", letters, "", "---", "", letters, "", "---", "")
+  actual_without_seps <- remove_extra_separators(with_separators)
+  expected_without_seps <- c(letters, "", "---", letters, "", "", "", letters, "", "", "")
+
+  expect_identical(actual_without_seps, expected_without_seps)
+})
+
+test_that("code backticks are replaced with empty string", {
+  with_backticks <- c(letters, "```", "", letters, "", "```",
+                       letters, "", "```", "", letters, "", "```", "")
+  actual_without_backticks <- remove_extra_backticks(with_backticks)
+  expected_without_backticks <- c(letters, "```", "", letters, "", "```",
+                                  letters, "", "", "", letters, "", "", "")
+
+  expect_identical(actual_without_backticks, expected_without_backticks)
+})
