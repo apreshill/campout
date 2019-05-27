@@ -87,10 +87,37 @@ chpt_extract_mcq_responses <- function(.lines) {
   #   str_extract_all("@possible\\_answers.*@")
 }
 
+# Conversion to learnr format ---------------------------------------------
+
+lrnr_append_yaml_output <- function(.lines) {
+  yaml_end <- str_which(.lines, "^---$")[2]
+  yaml_output_lrnr <- c("output: learnr::tutorial",
+                        "runtime: shiny_prerendered")
+
+  c(.lines[1:(yaml_end - 1)],
+    yaml_output_lrnr,
+    .lines[yaml_end:length(.lines)])
+}
+
+lrnr_append_code_preamble <- function(.lines) {
+  yaml_end <- str_which(.lines, "^---$")[2]
+  code_preamble <- c(
+    "",
+    "```{r setup, include=FALSE}",
+    "library(learnr)",
+    "knitr::opts_chunk$set(echo = FALSE)",
+    "```"
+  )
+
+  c(.lines[1:yaml_end],
+    code_preamble,
+    .lines[(yaml_end + 1):length(.lines)])
+}
+
 lrnr_convert_hint <- function(.lines) {
   tibble(Lines = .lines) %>%
-    mutate_at("Sections", ~extract_exercise_sections(Lines)) %>%
-    mutate_at("ExerciseTag", ~extract_exercise_name(Lines)) %>%
+    mutate(Sections = chpt_extract_exercise_sections(Lines)) %>%
+    mutate(ExerciseTag = chpt_extract_exercise_name(Lines)) %>%
     tidyr::fill("Sections", "ExerciseTag") %>%
     mutate_at("Lines", ~ {
       Lines <- if_else(str_detect(Lines, "^`\\@hint`"),
