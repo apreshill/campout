@@ -136,8 +136,8 @@ lrnr_convert_hint <- function(.lines) {
 
 lrnr_convert_code_exercises <- function(.lines) {
   tibble(Lines = .lines) %>%
-    mutate_at("Sections", ~extract_exercise_sections(Lines)) %>%
-    mutate_at("ExerciseTag", ~extract_exercise_name(Lines)) %>%
+    mutate(Sections = chpt_extract_exercise_sections(Lines)) %>%
+    mutate(ExerciseTag = chpt_extract_exercise_name(Lines)) %>%
     group_by("ExerciseTag") %>%
     tidyr::fill("Sections", "ExerciseTag") %>%
     mutate_at("Lines", ~ {
