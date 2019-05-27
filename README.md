@@ -7,6 +7,10 @@
 
 [![Lifecycle:
 experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/#experimental)
+[![Travis build
+status](https://travis-ci.org/lwjohnst86/campout.svg?branch=master)](https://travis-ci.org/lwjohnst86/campout)
+[![Codecov test
+coverage](https://codecov.io/gh/lwjohnst86/campout/branch/master/graph/badge.svg)](https://codecov.io/gh/lwjohnst86/campout?branch=master)
 <!-- badges: end -->
 
 The goal of campout is to for instructors of a DataCamp course to easily
@@ -24,6 +28,6 @@ You can install the development version from
 [GitHub](https://github.com/) with:
 
 ``` r
-# install.packages("devtools")
-devtools::install_github("lwjohnst86/campout")
+# install.packages("remotes")
+remotes::install_github("lwjohnst86/campout")
 ```
