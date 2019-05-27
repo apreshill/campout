@@ -27,7 +27,7 @@ if (length(status(cur_path)$unstaged)!=0)
 
 ## needs to check to see if there are dashes in the folder name
 
-pkgname <- tail(strsplit(cur_path, "/")[[1]], 1)
+pkgname <- basename(cur_path)
 if(grepl("-", pkgname)){
   if(is.null(rename)){
     pkgname <- gsub("-", "", pkgname)
