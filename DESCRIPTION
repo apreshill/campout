@@ -32,6 +32,7 @@ Imports:
     usethis,
     fs,
     here,
-    glue
+    glue,
+    learnr
 Suggests: 
-    testthat
+    testthat (>= 2.1.0)
