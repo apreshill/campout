@@ -33,6 +33,34 @@ extract_exercise_name <- function(.lines) {
     str_replace_all(" ", "-")
 }
 
+chpt_remove_extraneous_lines <- function(.lines) {
+  .lines %>%
+    str_remove("^(key|xp|lang|skills):.*$") %>%
+    str_remove("^type: .*$") %>%
+    str_remove("^`+yaml.*$") %>%
+    str_remove("^`\\@.*`.*$")
+}
+
+# Separators that are surrounded by empty lines
+chpt_remove_extra_separators <- function(.lines) {
+  if_else(
+    grepl("^$", lag(.lines)) & grepl("^$", lead(.lines)) &
+      grepl("^---$", .lines),
+    "",
+    .lines
+  )
+}
+
+# Backticks that are surrounded by empty lines
+chpt_remove_extra_backticks <- function(.lines) {
+  if_else(
+    grepl("^$", lag(.lines)) & grepl("^$", lead(.lines)) &
+      grepl("^```$", .lines, perl = TRUE),
+    "",
+    .lines
+  )
+}
+
 lrnr_convert_hint <- function(.lines) {
   tibble(Lines = .lines) %>%
     mutate_at("Sections", ~extract_exercise_sections(Lines)) %>%
