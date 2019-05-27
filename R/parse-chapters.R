@@ -164,7 +164,6 @@ lrnr_convert_code_exercises <- function(.lines) {
 
 lrnr_tidy_chapter <- function(.lines) {
   .lines %>%
-    # Replace instructions tag with bold "instructions" text
     chpt_modify_yaml() %>%
     chpt_modify_instruction_name() %>%
     chpt_remove_extraneous_lines() %>%
