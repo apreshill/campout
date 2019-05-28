@@ -14,7 +14,8 @@ Authors@R: c(
     person(given="Kevin", 
           family="Reuning",
           email="kevin.reuning@gmail.com", 
-          comment=c(ORCID = "0000-0003-0022-6301"))
+          comment=c(ORCID = "0000-0003-0022-6301"),
+          role = c("aut"))
     )
 Description: Convert a DataCamp course into another alternative source for learners 
     to use, rather than get a subscription.
@@ -38,7 +39,7 @@ Imports:
     here,
     glue,
     learnr
-  git2r
+    git2r
 Suggests: 
     testthat (>= 2.1.0),
     covr
