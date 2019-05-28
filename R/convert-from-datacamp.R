@@ -65,13 +65,15 @@ if(has_data){
 
 chapters <- str_subset(all_files, "chapter.\\.md")
 
+### Gets chapter names
+chapters_name <- path_ext_remove(path_file(chapters))
+
+## creates demo files
+sapply(chapters_name, use_tutorial, open=F, title="Demo" )
+
+## Overwrites demo files
 new_chapter_path <- file.path(cur_path, "inst/tutorials/", path_file(chapters)) %>%
     str_replace("\\.md", ".Rmd")
-
-if(!dir_exists(path_dir(new_chapter_path)[1])){
-  dir_create(path_dir(new_chapter_path)[1])
-}
-
 file_move(chapters, new_chapter_path)
 
 ### will need to be done within right directory
