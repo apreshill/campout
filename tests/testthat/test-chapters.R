@@ -4,7 +4,7 @@ chapter1 <- readr::read_lines("chapter1.md")
 
 test_that("creating an exercise tag from the chapter text", {
   exercise_name <- chapter1 %>%
-    extract_exercise_name() %>%
+    chpt_extract_exercise_name() %>%
     na.omit() %>%
     as.character()
 
@@ -16,7 +16,7 @@ test_that("creating an exercise tag from the chapter text", {
 
 test_that("extracting the exercise type from the exercise yaml", {
   exercise_type <- chapter1 %>%
-    extract_exercise_type() %>%
+    chpt_extract_exercise_type() %>%
     na.omit() %>%
     as.character()
 
@@ -28,7 +28,7 @@ test_that("extracting the exercise type from the exercise yaml", {
 
 test_that("extracting the sections within the exercise", {
   exercise_sections <- chapter1 %>%
-    extract_exercise_sections() %>%
+    chpt_extract_exercise_sections() %>%
     na.omit() %>%
     as.character()
 
@@ -41,20 +41,20 @@ test_that("extracting the sections within the exercise", {
 
 test_that("hint is converted to learnr style", {
   hint_conversion <- chapter1 %>%
-    lrnr_convert_hint()
+    chpt_exercise_to_list() %>%
+    lrnr_convert_hint() %>%
+    chpt_exercise_to_vector()
 
   expect_equal(sum(str_detect(hint_conversion, "div id.*hint")), 9)
   expect_equal(sum(str_detect(hint_conversion, "</div>")), 9)
   expect_equal(sum(str_detect(hint_conversion, "`@hint`")), 0)
 })
 
-# readr::read_lines("data-raw/chapter1.md") %>%
-#   lrnr_convert_code_exercises() %>%
-#   View()
-
 test_that("code exercises are converted to learnr style", {
   code_ex_conversion <- chapter1 %>%
-    lrnr_convert_code_exercises()
+    chpt_exercise_to_list() %>%
+    lrnr_convert_code_exercises() %>%
+    chpt_exercise_to_vector()
 
   # Setup code chunks
   expect_equal(sum(str_detect(code_ex_conversion, "```\\{r .*-setup\\}")), 6)
