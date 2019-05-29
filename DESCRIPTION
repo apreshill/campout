@@ -9,7 +9,6 @@ Authors@R: c(
            comment = c(ORCID = "0000-0003-4169-2616")),
     person(given = "Alison",
            family = "Hill",
-           email = "",
            role = c("aut")), 
     person(given="Kevin", 
           family="Reuning",
@@ -38,8 +37,9 @@ Imports:
     fs,
     here,
     glue,
-    learnr
-    git2r
+    learnr,
+    git2r,
+    stringi
 Suggests: 
     testthat (>= 2.1.0),
     covr
