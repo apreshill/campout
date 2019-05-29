@@ -2,7 +2,6 @@
 
 # Mostly generic string wranglers -----------------------------------------
 
-
 chpt_extract_exercise_type <- function(.lines) {
   .lines %>%
     str_extract("^type: .*$") %>%
@@ -72,35 +71,124 @@ chpt_modify_yaml <- function(.lines) {
     str_remove("^free_preview: true$")
 }
 
+chpt_prep_exercise_text <- function(.lines) {
+  tibble(Lines = .lines) %>%
+    mutate(
+      Sections = chpt_extract_exercise_sections(Lines),
+      ExerciseName = chpt_extract_exercise_name(Lines),
+      ExerciseType = chpt_extract_exercise_type(Lines)
+    ) %>%
+    tidyr::fill("Sections", "ExerciseName", "ExerciseType") %>%
+    mutate(ExerciseTag = str_c(ExerciseName, "-", ExerciseType))
+}
+
 # Parsing MCQ text --------------------------------------------------------
 
-# glue::glue_data("answer({possible_answers}, correct = {correct}, message = {message}))")
+chpt_extract_mcq_text <- function(.lines) {
+  .lines %>%
+    chpt_prep_exercise_text() %>%
+    mutate(
+      MCQResponses = if_else(
+        ExerciseType == "MultipleChoiceExercise" &
+          Sections == "possible_answers",
+        Lines,
+        NA_character_
+      ) %>%
+        str_extract("^- .*$") %>%
+        str_remove("^- "),
+      MCQAnswerCheck = if_else(
+        ExerciseType == "MultipleChoiceExercise" &
+          Sections == "sct",
+        Lines,
+        NA_character_
+      ),
+      MCQCorrectResponse = MCQAnswerCheck %>%
+        str_extract("^.*check_mc\\(.*$") %>%
+        str_replace("^.*check_mc\\(([1-9]),.*$", "\\1"),
+      MCQMessages = MCQAnswerCheck %>%
+        str_extract("^msg.*$") %>%
+        str_remove('^msg.* \\"') %>%
+        str_remove('\\"')
+    )
 
-# glue::glue("
-# question('',
-# ")
+}
 
 chpt_extract_mcq_responses <- function(.lines) {
   .lines %>%
-    str_flatten("\\n")
-  # %>%
-  #   str_extract_all("@possible\\_answers.*@")
+    chpt_extract_mcq_text() %>%
+    pull("MCQResponses") %>%
+    stringi::stri_remove_empty_na()
+}
+
+chpt_extract_mcq_answer <- function(.lines) {
+  .lines %>%
+    chpt_extract_mcq_text() %>%
+    pull("MCQCorrectResponse") %>%
+    stringi::stri_remove_empty_na()
+}
+
+chpt_extract_mcq_messages <- function(.lines) {
+  .lines %>%
+    chpt_extract_mcq_text() %>%
+    pull("MCQMessages") %>%
+    stringi::stri_remove_empty_na()
+}
+
+chpt_remove_mcq_text <- function(.lines) {
+  .lines %>%
+    chpt_prep_exercise_text() %>%
+    filter(
+        !(ExerciseType == "MultipleChoiceExercise" &
+          Sections %in% c("pre_exercise_code", "possible_answers", "sct") &
+          !is.na(Sections)),
+      ) %>%
+    pull("Lines")
+}
+
+# Convert exercises to list and back --------------------------------------
+
+chpt_exercise_to_list <- function(.lines) {
+  .lines %>%
+    str_flatten("\n") %>%
+    str_split("\\n---\\n") %>%
+    unlist() %>%
+    purrr::map(str_split, pattern = "\n") %>%
+    unlist(recursive = FALSE)
+}
+
+chpt_exercise_to_vector <- function(.lines) {
+  .lines %>%
+    unlist()
 }
 
 # Conversion to learnr format ---------------------------------------------
 
-lrnr_append_yaml_output <- function(.lines) {
-  yaml_end <- str_which(.lines, "^---$")[2]
+lrnr_append_yaml_output <- function(.lines_list) {
   yaml_output_lrnr <- c("output: learnr::tutorial",
-                        "runtime: shiny_prerendered")
+                        "runtime: shiny_prerendered",
+                        "---")
 
-  c(.lines[1:(yaml_end - 1)],
-    yaml_output_lrnr,
-    .lines[yaml_end:length(.lines)])
+  .lines_list[[1]] <- append(.lines_list[[1]], yaml_output_lrnr)
+  .lines_list
 }
 
-lrnr_append_code_preamble <- function(.lines) {
-  yaml_end <- str_which(.lines, "^---$")[2]
+lrnr_append_todo_list <- function(.lines_list) {
+  todo_list <- c(
+    "",
+    "<!-- TODO: Deal with `@sct` tags, they aren't supported. -->",
+    "<!-- TODO: Check that video content has been added. -->",
+    "<!-- TODO: Fix MCQ exercises, parsing isn't developed for it yet. -->",
+    "<!-- TODO: Check that Tab or Bullet Exercises were converted properly. -->",
+    "<!-- TODO: Decide what to do with pre-exercise code from MCQ, they aren't supported. -->",
+    "<!-- TODO: Decide what to do with `success_msg`, these aren't supported. -->",
+    ""
+  )
+
+  .lines_list[[2]] <- append(.lines_list[[2]], todo_list, after = 1)
+  .lines_list
+}
+
+lrnr_append_code_preamble <- function(.lines_list) {
   code_preamble <- c(
     "",
     "```{r setup, include=FALSE}",
@@ -109,81 +197,144 @@ lrnr_append_code_preamble <- function(.lines) {
     "```"
   )
 
-  c(.lines[1:yaml_end],
-    code_preamble,
-    .lines[(yaml_end + 1):length(.lines)])
+  .lines_list[[2]] <- append(.lines_list[[2]], code_preamble, after = 1)
+  .lines_list
 }
 
-lrnr_convert_hint <- function(.lines) {
-  tibble(Lines = .lines) %>%
-    mutate(Sections = chpt_extract_exercise_sections(Lines)) %>%
-    mutate(ExerciseTag = chpt_extract_exercise_name(Lines)) %>%
-    tidyr::fill("Sections", "ExerciseTag") %>%
-    mutate_at("Lines", ~ {
-      Lines <- if_else(str_detect(Lines, "^`\\@hint`"),
-                       as.character(glue::glue('<div id="{ExerciseTag}-hint">')),
-                       Lines)
-      if_else(
-        !is.na(Sections) &
-          Sections == "hint" &
-          lead(Sections) != "hint",
-        str_c(Lines, "</div>"),
-        Lines
-      )
-    }) %>%
-    pull("Lines")
-}
-
-lrnr_convert_code_exercises <- function(.lines) {
-  tibble(Lines = .lines) %>%
-    mutate(Sections = chpt_extract_exercise_sections(Lines)) %>%
-    mutate(ExerciseTag = chpt_extract_exercise_name(Lines)) %>%
-    group_by("ExerciseTag") %>%
-    tidyr::fill("Sections", "ExerciseTag") %>%
-    mutate_at("Lines", ~ {
-      Lines <- case_when(
-        !str_detect(Lines, "```\\{r") ~ Lines,
-        Sections == "pre_exercise_code" ~ as.character(glue::glue("```{{r {ExerciseTag}-setup}}")),
-        Sections == "sample_code" ~ as.character(
+lrnr_convert_mcq_exercises <- function(.lines_list) {
+  purrr::map(
+    .lines_list,
+    ~ {
+      mcq_responses <- tibble(
+        responses = chpt_extract_mcq_responses(.x),
+        messages = chpt_extract_mcq_messages(.x),
+        correct_response = seq_along(length(responses)) == chpt_extract_mcq_answer(.x),
+        converted = as.character(
           glue::glue(
-            "```{{r {ExerciseTag}, exercise=TRUE, exercise.setup='{ExerciseTag}-setup'}}"
+            '  answer("{responses}", correct = {correct_response}, message = {messages}),',
           )
-        ),
-        Sections == "solution" ~ as.character(glue::glue("```{{r {ExerciseTag}-solution}}")),
-        Sections == "sct" ~ as.character(glue::glue("```{{r {ExerciseTag}-check}}")),
-        TRUE ~ Lines
+        )
+      ) %>%
+        pull("converted")
+
+      exercise_tag <- str_c(
+        chpt_extract_exercise_name(.x) %>%
+          stringi::stri_remove_empty_na(),
+        "-",
+        chpt_extract_exercise_type(.x) %>%
+          stringi::stri_remove_empty_na()
       )
-      Lines %>%
+
+      mcq_chunk <- ""
+      if (length(mcq_responses) > 0) {
+        mcq_chunk <- c(
+          '',
+          as.character(glue::glue(
+            '```{{r {exercise_tag}-mcq, echo=FALSE}}'
+          )),
+          '# TODO: Add the question below in the quotation marks',
+          'question("",',
+          mcq_responses,
+          '  allow_retry = TRUE',
+          ')',
+          '```',
+          ''
+        )
+      }
+
+      mcq_locations <- str_which(.x, "^`@possible\\_answers`$")
+
+      if (length(mcq_locations) > 1) {
+        warning("There are more than one MCQ in this exercise ",
+                "(is it a Tab or Bullet exercise?). Leaving MCQ text as is.")
+        .lines <- .x
+      } else {
+        .lines <- .x %>%
+          chpt_remove_mcq_text() %>%
+          append(mcq_chunk)
+      }
+
+      .lines
+    }
+  )
+}
+
+lrnr_convert_hint <- function(.lines_list) {
+  purrr::map(
+    .lines_list,
+    ~ {
+      .x %>%
+        chpt_prep_exercise_text() %>%
+        mutate_at("Lines", ~ {
+          case_when(
+            str_detect(Lines, "^`\\@hint`") ~ as.character(glue::glue('<div id="{ExerciseTag}-hint">')),
+            !is.na(Sections) &
+              Sections == "hint" &
+              (lead(Sections) != "hint" |
+                 grepl("^```\\{r .*", lead(Lines))) ~ str_c(Lines, "</div>"),
+            TRUE ~ Lines
+          )
+        }) %>%
+        pull("Lines")
+    })
+}
+
+lrnr_convert_code_exercises <- function(.lines_list) {
+  purrr::map(
+    .lines_list,
+    ~ {
+      .x %>%
+        # TODO: Not sure how to figure out about the tab/bullets...
+        chpt_prep_exercise_text() %>%
+        mutate_at("Lines", ~ {
+          case_when(
+            !str_detect(Lines, "```\\{r") ~ Lines,
+            Sections == "pre_exercise_code" ~ as.character(glue::glue("```{{r {ExerciseTag}-setup}}")),
+            Sections == "sample_code" ~ as.character(
+              glue::glue(
+                "```{{r {ExerciseTag}, exercise=TRUE, exercise.setup='{ExerciseTag}-setup'}}"
+              )
+            ),
+            Sections == "solution" ~ as.character(glue::glue("```{{r {ExerciseTag}-solution}}")),
+            Sections == "sct" ~ as.character(glue::glue("```{{r {ExerciseTag}-check}}")),
+            TRUE ~ Lines
+          )
+        }) %>%
+        pull("Lines") %>%
         # TODO: Not really sure what to do about the success messages...
         str_replace("^success\\_msg\\((.*)\\)$", "\\1") %>%
         # For the tab exercises. Will need to check to see how they work.
-        str_replace("\\*\\*\\*", "### ")
-    }) %>%
-    pull("Lines")
+        str_replace("\\*\\*\\*", "### ") %>%
+        str_replace("TabExercise-setup", "NormalExercise-setup")
+    })
 }
 
-lrnr_tidy_chapter <- function(.lines) {
-  .lines %>%
-    chpt_modify_yaml() %>%
-    chpt_modify_instruction_name() %>%
-    chpt_remove_extraneous_lines() %>%
-    chpt_remove_extra_separators() %>%
-    chpt_remove_extra_backticks()
+lrnr_tidy_chapter <- function(.lines_list) {
+  purrr::map(
+    .lines_list,
+    ~ .x %>%
+      chpt_modify_yaml() %>%
+      chpt_modify_instruction_name() %>%
+      chpt_remove_extraneous_lines() %>%
+      chpt_remove_extra_separators() %>%
+      chpt_remove_extra_backticks()
+  )
 }
 
-lrnr_write_tutorial <- function(.lines, .chapter_md) {
-  new <- str_c(fs::path_ext_remove(.chapter_md), "-tutorial.Rmd")
-  readr::write_lines(.lines, new)
-
+lrnr_write_tutorial <- function(.lines, .output_path) {
+  readr::write_lines(.lines, .output_path)
   return(invisible(NULL))
 }
 
 dc_chapter_to_lrnr_tutorial <- function(.chapter_md) {
   readr::read_lines(.chapter_md) %>%
-    lrnr_convert_hint() %>%
+    chpt_exercise_to_list() %>%
+    lrnr_convert_mcq_exercises() %>%
     lrnr_convert_code_exercises() %>%
-    lrnr_append_code_preamble() %>%
+    lrnr_convert_hint() %>%
     lrnr_append_yaml_output() %>%
+    lrnr_append_code_preamble() %>%
+    lrnr_append_todo_list() %>%
     lrnr_tidy_chapter() %>%
-    lrnr_write_tutorial(.chapter_md = .chapter_md)
+    chpt_exercise_to_vector()
 }
