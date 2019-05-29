@@ -76,7 +76,7 @@ test_that("code exercises are converted to learnr style", {
 
 test_that("dashed separators are replaced with empty string", {
   with_separators <- c(letters, "", "---", letters, "", "---", "", letters, "", "---", "")
-  actual_without_seps <- remove_extra_separators(with_separators)
+  actual_without_seps <- chpt_remove_extra_separators(with_separators)
   expected_without_seps <- c(letters, "", "---", letters, "", "", "", letters, "", "", "")
 
   expect_identical(actual_without_seps, expected_without_seps)
@@ -85,30 +85,43 @@ test_that("dashed separators are replaced with empty string", {
 test_that("code backticks are replaced with empty string", {
   with_backticks <- c(letters, "```", "", letters, "", "```",
                        letters, "", "```", "", letters, "", "```", "")
-  actual_without_backticks <- remove_extra_backticks(with_backticks)
+  actual_without_backticks <- chpt_remove_extra_backticks(with_backticks)
   expected_without_backticks <- c(letters, "```", "", letters, "", "```",
                                   letters, "", "", "", letters, "", "", "")
 
   expect_identical(actual_without_backticks, expected_without_backticks)
 })
 
+test_that("MCQ are added", {
+  with_mcq <- chapter1 %>%
+    chpt_exercise_to_list() %>%
+    lrnr_convert_mcq_exercises() %>%
+    chpt_exercise_to_vector()
+
+  num_responses <- with_mcq %>%
+    str_detect("answer\\(") %>%
+    sum()
+  expect_equal(num_responses, 8)
+
+  num_questions <- with_mcq %>%
+    str_detect("question\\(") %>%
+    sum()
+  expect_equal(num_questions, 2)
+})
 
 # readr::read_lines("tests/testthat/chapter1.md") %>%
-#   lrnr_append_yaml_output() %>%
-#   head(10)
-#
-#
-#   # chpt_extract_mcq_responses() %>%
-#   str_flatten("NEWLINE") %>%
-#     str_extract("@possible\\_answers.*`@")
-# str_re
-#
-# c(letters, letters) %>%
-#   str_flatten("\n") %>%
-#   str_extract("a.*j")
-#
-# test_that("chapter is converted to tutorial", {
-#   dc_chapter_to_lrnr_tutorial("tests/testthat/chapter1.md")
-#
-#   expect_
-# })
+#   chpt_exercise_to_list() %>%
+#   lrnr_convert_hint() %>%
+#   str()
+#   # purrr::map(append, values = "---") %>%
+#   lrnr_convert_code_exercises() %>%
+#   View()
+
+test_that("chapter is converted to tutorial", {
+  new <- str_c(fs::path_ext_remove("chapter1.md"), "-tutorial.Rmd")
+  converted_chpt <- dc_chapter_to_lrnr_tutorial("chapter1.md")
+  expect_type(converted_chpt, "character")
+
+  lrnr_write_tutorial(converted_chpt, new)
+  expect_true(fs::file_exists(new))
+})
