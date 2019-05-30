@@ -353,8 +353,7 @@ lrnr_convert_code_exercises <- function(.lines_list) {
         # TODO: Not really sure what to do about the success messages...
         str_replace("^success\\_msg\\((.*)\\)$", "\\1") %>%
         # For the tab exercises. Will need to check to see how they work.
-        str_replace("\\*\\*\\*", "### ") %>%
-        str_replace("TabExercise-setup", "NormalExercise-setup")
+        str_replace("\\*\\*\\*", "### Exercise")
     })
 }
 
@@ -363,6 +362,7 @@ lrnr_tidy_chapter <- function(.lines_list) {
     .lines_list,
     ~ .x %>%
       chpt_modify_yaml() %>%
+      chpt_modify_dataset_path() %>%
       chpt_modify_instruction_name() %>%
       chpt_remove_extraneous_lines() %>%
       chpt_remove_extra_separators() %>%
