@@ -327,8 +327,14 @@ lrnr_convert_code_exercises <- function(.lines_list) {
     .lines_list,
     ~ {
       .x %>%
-        # TODO: Not sure how to figure out about the tab/bullets...
         chpt_prep_exercise_text() %>%
+        filter(!(grepl("(Tab|Bullet)Exercise", ExerciseType) &
+                  Sections == "sample_code" &
+                   !is.na(Sections)
+                  )) %>%
+        mutate_at("ExerciseTag",
+                  ~ str_replace(., "(Tab|Bullet)Exercise",
+                                "NormalExercise")) %>%
         mutate_at("Lines", ~ {
           case_when(
             !str_detect(Lines, "```\\{r") ~ Lines,
