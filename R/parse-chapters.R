@@ -338,8 +338,8 @@ lrnr_convert_code_exercises <- function(.lines_list) {
                 "```{{r {ExerciseTag}, exercise=TRUE, exercise.setup='{ExerciseTag}-setup'}}"
               )
             ),
-            Sections == "solution" ~ as.character(glue::glue("```{{r {ExerciseTag}-solution}}")),
-            Sections == "sct" ~ as.character(glue::glue("```{{r {ExerciseTag}-check}}")),
+            Sections == "solution" ~ as.character(glue::glue("```{{r {ExerciseTag}-hint-2, eval=FALSE}}")),
+            Sections == "sct" ~ as.character(glue::glue("```{{r {ExerciseTag}-check, eval=FALSE}}")),
             TRUE ~ Lines
           )
         }) %>%
