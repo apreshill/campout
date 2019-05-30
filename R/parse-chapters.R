@@ -167,6 +167,35 @@ chpt_exercise_to_vector <- function(.lines) {
     unlist()
 }
 
+
+# Insert slides into chapter ----------------------------------------------
+
+chpt_extract_projector_key <- function(.lines) {
+  projector_key_location <- str_which(.lines, "^`@projector_key`")
+  .lines[projector_key_location + 1]
+}
+
+chpt_insert_slides_text <- function(.lines, .slide_files) {
+  keys <- .lines %>%
+    chpt_extract_projector_key()
+
+  slide_keys <- purrr::map_chr(.slide_files, sld_extract_key)
+
+  for (key in keys) {
+    location <- str_which(.lines, key)
+    slide_file <- .slide_files[str_which(slide_keys, key)]
+    slide_file <- str_c(fs::path_ext_remove(slide_file), ".Rmd")
+    child_chunk <-
+      c(as.character(glue::glue("```{{r, child='{slide_file}'}}")),
+        "```")
+    .lines <- append(.lines, child_chunk, after = location)
+    .lines <- .lines %>%
+      str_remove(key)
+  }
+
+  .lines
+}
+
 # Conversion to learnr format ---------------------------------------------
 
 lrnr_append_yaml_output <- function(.lines_list) {
