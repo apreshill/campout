@@ -381,5 +381,6 @@ dc_chapter_to_lrnr_tutorial <- function(.chapter_md) {
     lrnr_append_code_preamble() %>%
     lrnr_append_todo_list() %>%
     lrnr_tidy_chapter() %>%
-    chpt_exercise_to_vector()
+    chpt_exercise_to_vector() %>%
+    util_remove_repeated_empty_lines()
 }
