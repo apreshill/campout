@@ -56,14 +56,20 @@ chpt_remove_extra_backticks <- function(.lines) {
 }
 
 chpt_modify_instruction_name <- function(.lines) {
-  if_else(str_detect(.lines, "^`@instructions`.*$"),
-          "**Instructions**:",
-          .lines)
+  pattern <- "^`@instructions`.*$"
+  instruction_locations <- str_which(.lines, pattern) + 1
+
+  if (length(instruction_locations) != 0)
+    .lines <- R.utils::insert(.lines, instruction_locations, "")
+
+  .lines %>%
+    str_replace(pattern, "**Instructions**:")
 }
 
-chpt_modify_dataset <- function(.lines) {
+chpt_modify_dataset_path <- function(.lines) {
   .lines %>%
-    str_replace("^load.*?http.*datasets.*/(.*\\.[rR]da).*$", "load(\\1)")
+    str_replace("^load.*?http.*(datasets)/.*/(.*\\.[rR]da).*$", "load('\\1/\\2')") %>%
+    str_replace("readRDS.*?http.*(datasets)/.*/(.*\\.[rR]ds).*$", "readRDS('\\1/\\2')")
 }
 
 chpt_modify_yaml <- function(.lines) {
