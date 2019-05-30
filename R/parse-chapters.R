@@ -308,11 +308,13 @@ lrnr_convert_hint <- function(.lines_list) {
         chpt_prep_exercise_text() %>%
         mutate_at("Lines", ~ {
           case_when(
-            str_detect(Lines, "^`\\@hint`") ~ as.character(glue::glue('<div id="{ExerciseTag}-hint">')),
+            str_detect(Lines, "^`\\@hint`") ~ as.character(glue::glue('```{{r {ExerciseTag}-hint-1, eval=FALSE}}')),
             !is.na(Sections) &
               Sections == "hint" &
               (lead(Sections) != "hint" |
-                 grepl("^```\\{r .*", lead(Lines))) ~ str_c(Lines, "</div>"),
+                 grepl("^```\\{r .*", lead(Lines))) ~ str_c(Lines, "```"),
+            Sections == "hint" & str_detect(Lines, "^- .*$") ~
+              str_replace(Lines, "^- (.*)$", '"\\1"'),
             TRUE ~ Lines
           )
         }) %>%
