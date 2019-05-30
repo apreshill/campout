@@ -266,11 +266,13 @@ lrnr_convert_mcq_exercises <- function(.lines_list) {
 
       mcq_chunk <- ""
       if (length(mcq_responses) > 0) {
+        chunk_tag <- glue::glue('```{{r {exercise_tag}-mcq, echo=FALSE}}') %>%
+          as.character() %>%
+          str_subset("^.*MultipleChoiceExercise-mcq.*$")
+
         mcq_chunk <- c(
           '',
-          as.character(glue::glue(
-            '```{{r {exercise_tag}-mcq, echo=FALSE}}'
-          )),
+          chunk_tag,
           '# TODO: Add the question below in the quotation marks',
           'question("",',
           mcq_responses,
