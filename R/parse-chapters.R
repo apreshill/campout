@@ -199,7 +199,9 @@ chpt_insert_slides_text <- function(.lines, .slide_files) {
 # Conversion to learnr format ---------------------------------------------
 
 lrnr_append_yaml_output <- function(.lines_list) {
-  yaml_output_lrnr <- c("output: learnr::tutorial",
+  yaml_output_lrnr <- c("output:",
+                        " learnr::tutorial:",
+                        "   theme: sandstone",
                         "runtime: shiny_prerendered",
                         "---")
 
@@ -210,12 +212,14 @@ lrnr_append_yaml_output <- function(.lines_list) {
 lrnr_append_todo_list <- function(.lines_list) {
   todo_list <- c(
     "",
-    "<!-- TODO: Deal with `@sct` tags, they aren't supported. -->",
+    "<!-- TODO: Deal with previous `@sct` tags (now `-check` labels), they aren't supported. -->",
     "<!-- TODO: Check that video content has been added. -->",
-    "<!-- TODO: Fix MCQ exercises, parsing isn't developed for it yet. -->",
+    "<!-- TODO: Confirm MCQ exercise has been correctly parsed. -->",
     "<!-- TODO: Check that Tab or Bullet Exercises were converted properly. -->",
+    "<!-- TODO: Fix Tab or Bullet Exercise chunk labels, there will be duplicates. They need to follow the pattern as described in https://rstudio.github.io/learnr/exercises.html#hints_and_solutions -->",
     "<!-- TODO: Decide what to do with pre-exercise code from MCQ, they aren't supported. -->",
     "<!-- TODO: Decide what to do with `success_msg`, these aren't supported. -->",
+    "<!-- TODO: Hint text needs to be moved to below the sample code chunk. -->",
     ""
   )
 
