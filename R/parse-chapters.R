@@ -232,7 +232,7 @@ lrnr_append_code_preamble <- function(.lines_list) {
     "",
     "```{r setup, include=FALSE}",
     "library(learnr)",
-    "knitr::opts_chunk$set(echo = FALSE)",
+    "knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)",
     "```"
   )
 
