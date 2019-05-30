@@ -45,8 +45,7 @@ test_that("hint is converted to learnr style", {
     lrnr_convert_hint() %>%
     chpt_exercise_to_vector()
 
-  expect_equal(sum(str_detect(hint_conversion, "div id.*hint")), 9)
-  expect_equal(sum(str_detect(hint_conversion, "</div>")), 9)
+  expect_equal(sum(str_detect(hint_conversion, "```\\{r .*-hint-1")), 9)
   expect_equal(sum(str_detect(hint_conversion, "`@hint`")), 0)
 })
 
@@ -65,13 +64,13 @@ test_that("code exercises are converted to learnr style", {
       code_ex_conversion,
       "```\\{r .*, exercise=TRUE, exercise\\.setup='.*-setup'\\}"
     )
-  ), 9)
+  ), 7)
 
   # Solution code chunks
-  expect_equal(sum(str_detect(code_ex_conversion, "```\\{r .*-solution\\}")), 7)
+  expect_equal(sum(str_detect(code_ex_conversion, "```\\{r .*-hint-2.*\\}")), 7)
 
   # Submission correction tests code chunks
-  expect_equal(sum(str_detect(code_ex_conversion, "```\\{r .*-check\\}")), 9)
+  expect_equal(sum(str_detect(code_ex_conversion, "```\\{r .*-check.*\\}")), 9)
 })
 
 test_that("dashed separators are replaced with empty string", {
@@ -109,19 +108,21 @@ test_that("MCQ are added", {
   expect_equal(num_questions, 2)
 })
 
-# readr::read_lines("tests/testthat/chapter1.md") %>%
-#   chpt_exercise_to_list() %>%
-#   lrnr_convert_hint() %>%
-#   str()
-#   # purrr::map(append, values = "---") %>%
-#   lrnr_convert_code_exercises() %>%
-#   View()
+test_that("projector key is extracted and slides inserted", {
+  key <- chpt_extract_projector_key(chapter1)
+  expect_equal(length(key), 3)
+
+  slides <- fs::dir_ls(regexp = "chapter.*video.*.md")
+  added_slide_as_text <- chapter1 %>%
+    chpt_insert_slides_text(slides)
+
+})
 
 test_that("chapter is converted to tutorial", {
   new <- str_c(fs::path_ext_remove("chapter1.md"), "-tutorial.Rmd")
   converted_chpt <- dc_chapter_to_lrnr_tutorial("chapter1.md")
   expect_type(converted_chpt, "character")
 
-  lrnr_write_tutorial(converted_chpt, new)
+  utils_write_file(converted_chpt, new)
   expect_true(fs::file_exists(new))
 })
