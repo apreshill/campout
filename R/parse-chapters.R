@@ -250,7 +250,7 @@ lrnr_convert_mcq_exercises <- function(.lines_list) {
         correct_response = seq_along(length(responses)) == chpt_extract_mcq_answer(.x),
         converted = as.character(
           glue::glue(
-            '  answer("{responses}", correct = {correct_response}, message = {messages}),',
+            '  answer("{responses}", correct = {correct_response}, message = "{messages}"),',
           )
         )
       ) %>%
