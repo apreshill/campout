@@ -370,10 +370,6 @@ lrnr_tidy_chapter <- function(.lines_list) {
   )
 }
 
-lrnr_write_tutorial <- function(.lines, .output_path) {
-  readr::write_lines(.lines, .output_path)
-  return(invisible(NULL))
-}
 
 dc_chapter_to_lrnr_tutorial <- function(.chapter_md) {
   readr::read_lines(.chapter_md) %>%
