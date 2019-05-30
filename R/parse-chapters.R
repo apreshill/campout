@@ -143,11 +143,11 @@ chpt_extract_mcq_messages <- function(.lines) {
 chpt_remove_mcq_text <- function(.lines) {
   .lines %>%
     chpt_prep_exercise_text() %>%
-    filter(
-        !(ExerciseType == "MultipleChoiceExercise" &
-          Sections %in% c("pre_exercise_code", "possible_answers", "sct") &
-          !is.na(Sections)),
-      ) %>%
+    filter(!(
+      ExerciseType == "MultipleChoiceExercise" &
+        Sections %in% c("pre_exercise_code", "possible_answers", "sct") &
+        !is.na(Sections)
+    )) %>%
     pull("Lines")
 }
 
