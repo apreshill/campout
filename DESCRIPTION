@@ -39,7 +39,8 @@ Imports:
     glue,
     learnr,
     git2r,
-    stringi
+    stringi,
+    R.utils
 Suggests: 
     testthat (>= 2.1.0),
     covr
