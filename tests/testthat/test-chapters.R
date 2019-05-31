@@ -112,10 +112,15 @@ test_that("projector key is extracted and slides inserted", {
   key <- chpt_extract_projector_key(chapter1)
   expect_equal(length(key), 3)
 
-  slides <- fs::dir_ls(regexp = "chapter.*video.*.md")
+  slides <- fs::dir_ls(regexp = "chapter.*video.*\\.md")
   added_slide_as_text <- chapter1 %>%
     chpt_insert_slides_text(slides)
 
+  number_child_chunks <- added_slide_as_text %>%
+    str_detect("r, child=") %>%
+    sum()
+
+  expect_equal(number_child_chunks, 2)
 })
 
 test_that("chapter is converted to tutorial", {
