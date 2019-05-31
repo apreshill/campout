@@ -2,11 +2,28 @@
 % Please edit documentation in R/convert-from-datacamp.R
 \name{datacamp_to_learnr_pkg}
 \alias{datacamp_to_learnr_pkg}
-\title{datacamp_to_learnr}
+\title{Convert your DataCamp material into learnr tutorials.}
 \usage{
 datacamp_to_learnr_pkg(dc_path = ".", lrnr_pkg_path,
   author_name = "Default")
 }
+\arguments{
+\item{dc_path}{Path to the DataCamp material.}
+
+\item{lrnr_pkg_path}{Path to the new learnr package.}
+
+\item{author_name}{Name of author.}
+}
+\value{
+Creates a new package containing the material as a \code{\link[learnr:tutorial]{learnr::tutorial()}}.
+}
 \description{
-datacamp_to_learnr
+Then you can use the function \code{\link[learnr:run_tutorial]{learnr::run_tutorial()}} to run the tutorials
+interactively.
+}
+\examples{
+\dontrun{
+Temp <- tempdir()
+datacamp_to_learnr_pkg(lrnr_pkg_path = Temp)
+}
 }
