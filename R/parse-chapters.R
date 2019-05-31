@@ -80,12 +80,12 @@ chpt_modify_yaml <- function(.lines) {
 chpt_prep_exercise_text <- function(.lines) {
   tibble(Lines = .lines) %>%
     mutate(
-      Sections = chpt_extract_exercise_sections(Lines),
-      ExerciseName = chpt_extract_exercise_name(Lines),
-      ExerciseType = chpt_extract_exercise_type(Lines)
+      Sections = chpt_extract_exercise_sections(.data$Lines),
+      ExerciseName = chpt_extract_exercise_name(.data$Lines),
+      ExerciseType = chpt_extract_exercise_type(.data$Lines)
     ) %>%
     tidyr::fill("Sections", "ExerciseName", "ExerciseType") %>%
-    mutate(ExerciseTag = str_c(ExerciseName, "-", ExerciseType))
+    mutate(ExerciseTag = str_c(.data$ExerciseName, "-", .data$ExerciseType))
 }
 
 # Parsing MCQ text --------------------------------------------------------
@@ -95,23 +95,23 @@ chpt_extract_mcq_text <- function(.lines) {
     chpt_prep_exercise_text() %>%
     mutate(
       MCQResponses = if_else(
-        ExerciseType == "MultipleChoiceExercise" &
-          Sections == "possible_answers",
-        Lines,
+        .data$ExerciseType == "MultipleChoiceExercise" &
+          .data$Sections == "possible_answers",
+        .data$Lines,
         NA_character_
       ) %>%
         str_extract("^- .*$") %>%
         str_remove("^- "),
       MCQAnswerCheck = if_else(
-        ExerciseType == "MultipleChoiceExercise" &
-          Sections == "sct",
-        Lines,
+        .data$ExerciseType == "MultipleChoiceExercise" &
+          .data$Sections == "sct",
+        .data$Lines,
         NA_character_
       ),
-      MCQCorrectResponse = MCQAnswerCheck %>%
+      MCQCorrectResponse = .data$MCQAnswerCheck %>%
         str_extract("^.*check_mc\\(.*$") %>%
         str_replace("^.*check_mc\\(([1-9]),.*$", "\\1"),
-      MCQMessages = MCQAnswerCheck %>%
+      MCQMessages = .data$MCQAnswerCheck %>%
         str_extract("^msg.*$") %>%
         str_remove('^msg.* \\"') %>%
         str_remove('\\"')
@@ -144,9 +144,9 @@ chpt_remove_mcq_text <- function(.lines) {
   .lines %>%
     chpt_prep_exercise_text() %>%
     filter(!(
-      ExerciseType == "MultipleChoiceExercise" &
-        Sections %in% c("pre_exercise_code", "possible_answers", "sct") &
-        !is.na(Sections)
+      .data$ExerciseType == "MultipleChoiceExercise" &
+        .data$Sections %in% c("pre_exercise_code", "possible_answers", "sct") &
+        !is.na(.data$Sections)
     )) %>%
     pull("Lines")
 }
@@ -184,13 +184,17 @@ chpt_insert_slides_text <- function(.lines, .slide_files) {
   for (key in keys) {
     location <- str_which(.lines, key)
     slide_file <- .slide_files[str_which(slide_keys, key)]
-    slide_file <- str_c(fs::path_ext_remove(slide_file), ".Rmd")
-    child_chunk <-
-      c(as.character(glue::glue("```{{r, child='{slide_file}'}}")),
-        "```")
-    .lines <- append(.lines, child_chunk, after = location)
-    .lines <- .lines %>%
-      str_remove(key)
+    if (length(slide_file) != 0) {
+      slide_file <- str_c(fs::path_ext_remove(slide_file), ".Rmd")
+      child_chunk <-
+        c(as.character(glue::glue("```{{r, child='{slide_file}'}}")),
+          "```")
+      .lines <- append(.lines, child_chunk, after = location)
+      .lines <- .lines %>%
+        str_remove(key)
+    } else {
+      .lines <- .lines
+    }
   }
 
   .lines
@@ -247,7 +251,7 @@ lrnr_convert_mcq_exercises <- function(.lines_list) {
       mcq_responses <- tibble(
         responses = chpt_extract_mcq_responses(.x),
         messages = chpt_extract_mcq_messages(.x),
-        correct_response = seq_along(length(responses)) == chpt_extract_mcq_answer(.x),
+        correct_response = seq_along(length(.data$responses)) == chpt_extract_mcq_answer(.x),
         converted = as.character(
           glue::glue(
             '  answer("{responses}", correct = {correct_response}, message = "{messages}"),',
@@ -308,14 +312,14 @@ lrnr_convert_hint <- function(.lines_list) {
         chpt_prep_exercise_text() %>%
         mutate_at("Lines", ~ {
           case_when(
-            str_detect(Lines, "^`\\@hint`") ~ as.character(glue::glue('```{{r {ExerciseTag}-hint-1, eval=FALSE}}')),
-            !is.na(Sections) &
-              Sections == "hint" &
-              (lead(Sections) != "hint" |
-                 grepl("^```\\{r .*", lead(Lines))) ~ str_c(Lines, "```"),
-            Sections == "hint" & str_detect(Lines, "^- .*$") ~
-              str_replace(Lines, "^- (.*)$", '"\\1"'),
-            TRUE ~ Lines
+            str_detect(.data$Lines, "^`\\@hint`") ~ as.character(glue::glue('```{{r {ExerciseTag}-hint-1, eval=FALSE}}')),
+            !is.na(.data$Sections) &
+              .data$Sections == "hint" &
+              (lead(.data$Sections) != "hint" |
+                 grepl("^```\\{r .*", lead(.data$Lines))) ~ str_c(.data$Lines, "```"),
+            .data$Sections == "hint" & str_detect(.data$Lines, "^- .*$") ~
+              str_replace(.data$Lines, "^- (.*)$", '"\\1"'),
+            TRUE ~ .data$Lines
           )
         }) %>%
         pull("Lines")
@@ -328,25 +332,25 @@ lrnr_convert_code_exercises <- function(.lines_list) {
     ~ {
       .x %>%
         chpt_prep_exercise_text() %>%
-        filter(!(grepl("(Tab|Bullet)Exercise", ExerciseType) &
-                  Sections == "sample_code" &
-                   !is.na(Sections)
+        filter(!(grepl("(Tab|Bullet)Exercise", .data$ExerciseType) &
+                  .data$Sections == "sample_code" &
+                   !is.na(.data$Sections)
                   )) %>%
         mutate_at("ExerciseTag",
                   ~ str_replace(., "(Tab|Bullet)Exercise",
                                 "NormalExercise")) %>%
         mutate_at("Lines", ~ {
           case_when(
-            !str_detect(Lines, "```\\{r") ~ Lines,
-            Sections == "pre_exercise_code" ~ as.character(glue::glue("```{{r {ExerciseTag}-setup}}")),
-            Sections == "sample_code" ~ as.character(
+            !str_detect(.data$Lines, "```\\{r") ~ .data$Lines,
+            .data$Sections == "pre_exercise_code" ~ as.character(glue::glue("```{{r {ExerciseTag}-setup}}")),
+            .data$Sections == "sample_code" ~ as.character(
               glue::glue(
                 "```{{r {ExerciseTag}, exercise=TRUE, exercise.setup='{ExerciseTag}-setup'}}"
               )
             ),
-            Sections == "solution" ~ as.character(glue::glue("```{{r {ExerciseTag}-hint-2, eval=FALSE}}")),
-            Sections == "sct" ~ as.character(glue::glue("```{{r {ExerciseTag}-check, eval=FALSE}}")),
-            TRUE ~ Lines
+            .data$Sections == "solution" ~ as.character(glue::glue("```{{r {ExerciseTag}-hint-2, eval=FALSE}}")),
+            .data$Sections == "sct" ~ as.character(glue::glue("```{{r {ExerciseTag}-check, eval=FALSE}}")),
+            TRUE ~ .data$Lines
           )
         }) %>%
         pull("Lines") %>%

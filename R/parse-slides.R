@@ -3,8 +3,8 @@
 
 sld_extract_key <- function(.file_path) {
   readr::read_lines(.file_path) %>%
-      head(4) %>%
-      str_subset("^key: .*") %>%
+      utils::head(4) %>%
+      str_subset("^key: .*$") %>%
       str_remove("key: ")
 }
 
@@ -15,8 +15,8 @@ sld_remove_extraneous_lines <- function(.lines) {
     str_remove("^`\\@.*`.*$") %>%
     str_remove("^name: .*$")
 
-  c(head(removed, 3),
-    tail(removed, -3) %>%
+  c(utils::head(removed, 3),
+    utils::tail(removed, -3) %>%
       str_remove("^title: .*$"))
 }
 

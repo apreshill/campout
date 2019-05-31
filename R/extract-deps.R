@@ -9,8 +9,8 @@ extract_rpkg_deps <- function(.file) {
         str_remove(',.*$')
 }
 
-add_deps_desc <- function(.deps) {
-    purrr::walk(dependencies, usethis::use_package)
+add_deps_imports <- function(.deps) {
+    purrr::walk(.deps, usethis::use_package)
 }
 
 deps_to_desc <- function(.file) {
@@ -18,7 +18,7 @@ deps_to_desc <- function(.file) {
         extract_rpkg_deps()
 
     # TODO: Check if DESCRIPTION file exists.
-    add_deps_desc(deps)
+    add_deps_imports(deps)
 
     # TODO: Use something like withr instead of here?
     fs::file_delete(here::here("requirements.R"))
