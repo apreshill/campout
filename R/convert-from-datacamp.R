@@ -61,7 +61,7 @@ datacamp_to_learnr_pkg <-
     pkgname <- paste(pkgname, ".Rproj", sep = "")
 
     all_files <-
-      dir_ls(cur_path,
+      fs::dir_ls(cur_path,
              recurse = TRUE,
              type = "file",
              all = TRUE)
@@ -76,46 +76,57 @@ datacamp_to_learnr_pkg <-
     }
     # # Create as package -------------------------------------------------------
 
-
-    create_package(path_dir(proj_name))
-    if (has_data) {
-      use_data_raw(open = F) ### will need to be done within right directory
-    }
+    usethis::create_package(fs::path_dir(proj_name))
 
     chapters <- str_subset(all_files, "chapter.\\.md")
 
     ### Gets chapter names
-    chapters_name <- path_ext_remove(path_file(chapters))
+    chapters_name <- fs::path_ext_remove(fs::path_file(chapters))
 
     ## creates demo files
     sapply(chapters_name,
-           use_tutorial,
+           usethis::use_tutorial,
            open = F,
            title = "Demo")
 
     ## Overwrites demo files
     new_chapter_path <-
-      file.path(cur_path, "inst/tutorials/", path_file(chapters)) %>%
+      file.path(cur_path, "inst/tutorials/", fs::path_file(chapters)) %>%
       str_replace("\\.md", ".Rmd")
-    file_move(chapters, new_chapter_path)
+    fs::file_move(chapters, new_chapter_path)
 
     ### will need to be done within right directory
-    use_build_ignore("slides")
-    use_tidy_versions()
-    use_github(overwrite = T)
-    use_ccby_license(name = author_name)
-    use_blank_slate()
+    usethis::use_build_ignore("slides")
+    usethis::use_tidy_versions()
+    usethis::use_github(overwrite = T)
+    usethis::use_ccby_license(name = author_name)
+    usethis::use_blank_slate()
   }
 
-# # Update datasets into data -----------------------------------------------
-# Or move dataset folder into inst tutorial
-#
-# datasets <- all_files %>%
-#     str_subset("\\.(rda|rds)$")
-# file_delete(datasets)
-#
-# # Move images -------------------------------------------------------------
-#
-# images <- str_subset(all_files, "datasets/.*\\.png$")
-# file_move(images, here("inst/tutorials/images"))
-#
+dc_to_lrnr_copy_converted_chpts <- function(.dc_path, .lrnr_pkg_path) {
+  chapter_files <- fs::dir_ls(path = .dc_path, regexp = "chapter[1-9]\\.md")
+  new_tutorial_name <- fs::path_ext_remove(basename(chapter_files))
+  converted_chapter_files <- purrr::map(chapter_files, dc_chapter_to_lrnr_tutorial)
+
+  withr::with_dir(.lrnr_pkg_path, {
+    usethis::use_tutorial(new_tutorial_name, open = FALSE)
+    new_tutorial_path <- fs::dir_ls(".", regexp = "chapter[1-9]", recurse = TRUE)
+  })
+
+  purrr::walk2(converted_chapter_files, new_tutorial_path,
+               ~ readr::write_lines(.x, .y))
+  return(invisible(NULL))
+}
+
+dc_to_lrnr_copy_slides_dir <- function(.dc_path, .lrnr_pkg_path) {
+  dc_slides_dir <- fs::path(.dc_path, "slides")
+  lrnr_slides_dir <- fs::path(.lrnr_pkg_path, "inst", "tutorials", "slides")
+  fs::dir_copy(dc_slides_dir, lrnr_slides_dir)
+}
+
+dc_to_lrnr_copy_datasets_dir <- function(.dc_path, .lrnr_pkg_path) {
+  dc_dataset_dir <- fs::path(.dc_path, "datasets")
+  lrnr_dataset_dir <- fs::path(.lrnr_pkg_path, "inst", "tutorials", "datasets")
+  fs::dir_copy(dc_dataset_dir, lrnr_dataset_dir)
+}
+
