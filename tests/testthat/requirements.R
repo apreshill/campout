@@ -1,4 +1,6 @@
-library(remotes)
+skip("Only a template file.")
+
+# library(remotes)
 
 install_version("ggplot2", "3.1.0")
 install_version("dplyr", "0.8.0")
