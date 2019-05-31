@@ -1,7 +1,20 @@
-#' datacamp_to_learnr
+#' Convert your DataCamp material into learnr tutorials.
 #'
+#' Then you can use the function [learnr::run_tutorial()] to run the tutorials
+#' interactively.
 #'
+#' @param dc_path Path to the DataCamp material.
+#' @param lrnr_pkg_path Path to the new learnr package.
+#' @param author_name Name of author.
+#'
+#' @return Creates a new package containing the material as a [learnr::tutorial()].
 #' @export
+#'
+#' @examples
+#' \dontrun{
+#' Temp <- tempdir()
+#' datacamp_to_learnr_pkg(lrnr_pkg_path = Temp)
+#' }
 datacamp_to_learnr_pkg <-
   function(dc_path = ".", lrnr_pkg_path,
            author_name = "Default") {
