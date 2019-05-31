@@ -40,7 +40,10 @@ Imports:
     learnr,
     git2r,
     stringi,
-    R.utils
+    R.utils,
+    utils,
+    tidyr,
+    rlang
 Suggests: 
     testthat (>= 2.1.0),
     covr

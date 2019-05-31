@@ -1,8 +1,7 @@
 #' @keywords internal
 #' @import dplyr stringr
-#' @import usethis
-#' @import fs
 #' @importFrom git2r in_repository status
+#' @importFrom rlang .data
 "_PACKAGE"
 
 # The following block is used by usethis to automatically manage
