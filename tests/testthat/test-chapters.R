@@ -1,6 +1,8 @@
 context("Extracting, parsing, and modifying chapter text")
 
-chapter1 <- readr::read_lines("chapter1.md")
+chapter1_file <- fs::dir_ls(output_dir, regexp = "chapter1\\.md$", recurse = TRUE)
+chapter1 <- readr::read_lines(chapter1_file)
+slide_files <- fs::dir_ls(output_dir, regexp = "chapter.*video.*\\.md$", recurse = TRUE)
 
 test_that("creating an exercise tag from the chapter text", {
   exercise_name <- chapter1 %>%
@@ -112,20 +114,19 @@ test_that("projector key is extracted and slides inserted", {
   key <- chpt_extract_projector_key(chapter1)
   expect_equal(length(key), 3)
 
-  slides <- fs::dir_ls(regexp = "chapter.*video.*\\.md")
   added_slide_as_text <- chapter1 %>%
-    chpt_insert_slides_text(slides)
+    chpt_insert_slides_text(slide_files)
 
   number_child_chunks <- added_slide_as_text %>%
     str_detect("r, child=") %>%
     sum()
 
-  expect_equal(number_child_chunks, 2)
+  expect_equal(number_child_chunks, 3)
 })
 
 test_that("chapter is converted to tutorial", {
-  new <- str_c(fs::path_ext_remove("chapter1.md"), "-tutorial.Rmd")
-  converted_chpt <- dc_chapter_to_lrnr_tutorial("chapter1.md")
+  new <- str_c(fs::path_ext_remove(chapter1_file), "-tutorial.Rmd")
+  converted_chpt <- dc_chapter_to_lrnr_tutorial(chapter1_file)
   expect_type(converted_chpt, "character")
 
   utils_write_file(converted_chpt, new)
