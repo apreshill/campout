@@ -4,7 +4,7 @@
 \alias{datacamp_to_learnr_pkg}
 \title{Convert your DataCamp material into learnr tutorials.}
 \usage{
-datacamp_to_learnr_pkg(dc_path = ".", lrnr_pkg_path,
+datacamp_to_learnr_pkg(dc_path = ".", lrnr_pkg_path = ".",
   author_name = "Default")
 }
 \arguments{
