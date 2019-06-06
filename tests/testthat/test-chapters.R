@@ -1,8 +1,12 @@
 context("Extracting, parsing, and modifying chapter text")
 
-chapter1_file <- fs::dir_ls(output_dir, regexp = "chapter1\\.md$", recurse = TRUE)
+chapter1_file <- fs::dir_ls(fs::path(output_dir, "dc-course"),
+                            regexp = "chapter1\\.md$", recurse = TRUE)
+chapter2_file <- fs::dir_ls(fs::path(output_dir, "dc-course"),
+                            regexp = "chapter2\\.md$", recurse = TRUE)
 chapter1 <- readr::read_lines(chapter1_file)
-slide_files <- fs::dir_ls(output_dir, regexp = "chapter.*video.*\\.md$", recurse = TRUE)
+slide_files <- fs::dir_ls(fs::path(output_dir, "dc-course"),
+                          regexp = "chapter.*video.*\\.md$", recurse = TRUE)
 
 test_that("creating an exercise tag from the chapter text", {
   exercise_name <- chapter1 %>%
@@ -125,8 +129,17 @@ test_that("projector key is extracted and slides inserted", {
 })
 
 test_that("chapter is converted to tutorial", {
+  # Chapter 1
   new <- str_c(fs::path_ext_remove(chapter1_file), "-tutorial.Rmd")
   converted_chpt <- dc_chapter_to_lrnr_tutorial(chapter1_file)
+  expect_type(converted_chpt, "character")
+
+  utils_write_file(converted_chpt, new)
+  expect_true(fs::file_exists(new))
+
+  # Chapter 2
+  new <- str_c(fs::path_ext_remove(chapter2_file), "-tutorial.Rmd")
+  converted_chpt <- dc_chapter_to_lrnr_tutorial(chapter2_file)
   expect_type(converted_chpt, "character")
 
   utils_write_file(converted_chpt, new)
