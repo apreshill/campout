@@ -1,3 +1,6 @@
+
+# Final converters --------------------------------------------------------
+
 #' Convert your DataCamp material into learnr tutorials.
 #'
 #' Then you can use the function [learnr::run_tutorial()] to run the tutorials
@@ -37,8 +40,7 @@ datacamp_to_learnr_pkg <-
       rlang::abort("The name of the new learnr package shouldn't have any spaces, dashes, or underscores")
 
     # Create learnr package
-    usethis::create_package(lrnr_pkg_path, open = FALSE)
-    print("here?")
+    suppressWarnings(usethis::create_package(lrnr_pkg_path, open = FALSE))
 
     chapter_files <- fs::dir_ls(
       path = dc_path,
@@ -54,10 +56,14 @@ datacamp_to_learnr_pkg <-
     dependencies <- extract_rpkg_deps(req_file)
 
     withr::with_dir(lrnr_pkg_path, {
-      purrr::walk2(new_tutorial_name,
-                   new_tutorial_title,
-                   usethis::use_tutorial,
-                   open = FALSE)
+      suppressWarnings(
+        purrr::walk2(
+          new_tutorial_name,
+          new_tutorial_title,
+          usethis::use_tutorial,
+          open = FALSE
+        )
+      )
       # Not sure about setting GitHub right away.
       # usethis::use_github()
       usethis::use_ccby_license(name = author_name)
@@ -65,7 +71,6 @@ datacamp_to_learnr_pkg <-
       add_deps_imports(dependencies)
       usethis::use_tidy_versions()
     })
-    print("here later?")
 
     converted_chapter_files <-
       purrr::map(chapter_files, dc_chapter_to_lrnr_tutorial)
@@ -76,10 +81,27 @@ datacamp_to_learnr_pkg <-
                  ~ readr::write_lines(.x, .y))
 
     copy_datasets_dir_to_lrnr(dc_path, lrnr_pkg_path)
-
     copy_slides_dir_to_lrnr(dc_path, lrnr_pkg_path)
 
+    new_slide_files <- fs::dir_ls(fs::path(lrnr_pkg_path, "inst", "tutorials", "slides"),
+                                  glob = "*.md")
+
+    new_tutorial_path %>%
+      purrr::walk(
+        ~ .x %>%
+          readr::read_lines() %>%
+          chpt_insert_slides_text(new_slide_files) %>%
+          readr::write_lines(.x)
+      )
+
+    new_slide_files %>%
+      purrr::map(dc_slides_to_text_doc) %>%
+      purrr::walk2(new_slide_files,
+                   ~readr::write_lines(.x, .y))
+
   }
+
+# Helpers -----------------------------------------------------------------
 
 copy_slides_dir_to_lrnr <- function(.dc_path, .lrnr_pkg_path) {
   dc_slides_dir <- fs::path(.dc_path, "slides")
