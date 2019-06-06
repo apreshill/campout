@@ -1,7 +1,7 @@
 
-extract_rpkg_deps <- function(.file) {
+extract_rpkg_deps <- function(.req_file) {
     # TODO: Deal with versions?
-    .file %>%
+    .req_file %>%
         readr::read_lines() %>%
         str_subset("install") %>%
         str_extract('\".*\"') %>%
@@ -12,17 +12,3 @@ extract_rpkg_deps <- function(.file) {
 add_deps_imports <- function(.deps) {
     purrr::walk(.deps, usethis::use_package)
 }
-
-deps_to_desc <- function(.file) {
-    deps <- .file %>%
-        extract_rpkg_deps()
-
-    # TODO: Check if DESCRIPTION file exists.
-    add_deps_imports(deps)
-
-    # TODO: Use something like withr instead of here?
-    fs::file_delete(here::here("requirements.R"))
-
-    return(invisible(NULL))
-}
-
