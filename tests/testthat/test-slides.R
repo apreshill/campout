@@ -1,11 +1,8 @@
 context("Extracting, parsing, and modifying the slides")
 
-
-# chpt_text <-
-  # readr::read_lines("tests/testthat/chapter1.md")
-  # dc_slides_to_text_doc("tests/testthat/chapter_1_video_1.md")
-slide_file <- fs::dir_ls(output_dir, regexp = "chapter_1_video_1\\.md$", recurse = TRUE)
-chpt1_slide1 <- readr::read_lines(slide_file)
+slide_file <- fs::dir_ls(fs::path(output_dir, "dc-course"),
+                         regexp = "chapter_1_video_1\\.md$", recurse = TRUE)
+fs::file_chmod(slide_file, "666")
 
 test_that("projector key is extracted", {
   key <- sld_extract_key(slide_file)
