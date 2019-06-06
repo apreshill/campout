@@ -91,7 +91,7 @@ chpt_prep_exercise_text <- function(.lines) {
 # Parsing MCQ text --------------------------------------------------------
 
 chpt_extract_mcq_text <- function(.lines) {
-  .lines %>%
+  mcq_text <- .lines %>%
     chpt_prep_exercise_text() %>%
     mutate(
       MCQResponses = if_else(
@@ -114,30 +114,69 @@ chpt_extract_mcq_text <- function(.lines) {
       MCQMessages = .data$MCQAnswerCheck %>%
         str_extract("^msg.*$") %>%
         str_remove('^msg.* \\"') %>%
-        str_remove('\\"')
-    )
+        str_remove('\\"'),
+      TabMCQResponses = NA
+      )
 
+  mcq_inside_tab <- any(str_detect(mcq_text$MCQResponses, "^\\[.*\\]$"),
+                        na.rm = TRUE)
+  if (mcq_inside_tab) {
+    mcq_text <- mcq_text %>%
+      mutate(
+        TabMCQResponses = MCQResponses
+      )
+  }
+
+  mcq_text
 }
 
 chpt_extract_mcq_responses <- function(.lines) {
-  .lines %>%
-    chpt_extract_mcq_text() %>%
-    pull("MCQResponses") %>%
+  responses <- .lines %>%
+    chpt_extract_mcq_text()
+
+  if (any(!is.na(responses$TabMCQResponses))) {
+    responses <- responses %>%
+      pull("TabMCQResponses")
+  } else {
+    responses <- responses %>%
+      pull("MCQResponses")
+  }
+
+  responses %>%
     stringi::stri_remove_empty_na()
 }
 
 chpt_extract_mcq_answer <- function(.lines) {
-  .lines %>%
-    chpt_extract_mcq_text() %>%
-    pull("MCQCorrectResponse") %>%
+  answer <- .lines %>%
+    chpt_extract_mcq_text()
+
+  if (any(!is.na(answer$TabMCQResponses))) {
+    answer <- answer %>%
+      pull("TabMCQResponses") %>%
+      stringi::stri_remove_empty_na() %>%
+      str_which("^\\[.*\\]$")
+  } else {
+    answer <- answer %>%
+      pull("MCQCorrectResponse")
+  }
+
+  answer %>%
     stringi::stri_remove_empty_na()
 }
 
 chpt_extract_mcq_messages <- function(.lines) {
-  .lines %>%
-    chpt_extract_mcq_text() %>%
-    pull("MCQMessages") %>%
-    stringi::stri_remove_empty_na()
+  msgs <- .lines %>%
+    chpt_extract_mcq_text()
+
+  if (any(!is.na(msgs$TabMCQResponses))) {
+    msgs <- "FIXME"
+  } else {
+    msgs <- msgs %>%
+      pull("MCQMessages") %>%
+      stringi::stri_remove_empty_na()
+  }
+
+  msgs
 }
 
 chpt_remove_mcq_text <- function(.lines) {
@@ -185,7 +224,7 @@ chpt_insert_slides_text <- function(.lines, .slide_files) {
     location <- str_which(.lines, key)
     slide_file <- .slide_files[str_which(slide_keys, key)]
     if (length(slide_file) != 0) {
-      slide_file <- str_c(fs::path_ext_remove(slide_file), ".Rmd")
+      slide_file <- fs::path_ext_set(slide_file, ".Rmd")
       child_chunk <-
         c(as.character(glue::glue("```{{r, child='{slide_file}'}}")),
           "```")
@@ -250,11 +289,13 @@ lrnr_convert_mcq_exercises <- function(.lines_list) {
     ~ {
       mcq_responses <- tibble(
         responses = chpt_extract_mcq_responses(.x),
-        messages = chpt_extract_mcq_messages(.x),
+        messages = chpt_extract_mcq_messages(.x)
+      ) %>%
+        mutate(
         correct_response = seq_along(length(.data$responses)) == chpt_extract_mcq_answer(.x),
         converted = as.character(
           glue::glue(
-            '  answer("{responses}", correct = {correct_response}, message = "{messages}"),',
+            '  answer("{responses}", correct = {correct_response}, message = "{messages}"),'
           )
         )
       ) %>%
@@ -292,6 +333,8 @@ lrnr_convert_mcq_exercises <- function(.lines_list) {
       if (length(mcq_locations) > 1) {
         warning("There are more than one MCQ in this exercise ",
                 "(is it a Tab or Bullet exercise?). Leaving MCQ text as is.")
+        .lines <- .x
+      } else if (length(mcq_locations) == 0) {
         .lines <- .x
       } else {
         .lines <- .x %>%
