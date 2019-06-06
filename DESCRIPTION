@@ -43,7 +43,9 @@ Imports:
     R.utils,
     utils,
     tidyr,
-    rlang
+    rlang (>= 0.1.2),
+    withr
 Suggests: 
     testthat (>= 2.1.0),
-    covr
+    covr,
+    roxygen2
