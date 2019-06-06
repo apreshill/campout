@@ -31,3 +31,24 @@ You can install the development version from
 # install.packages("remotes")
 remotes::install_github("lwjohnst86/campout")
 ```
+
+# Usage
+
+So far there is only one conversion to the learnr tutorials, with this
+function:
+
+``` r
+datacamp_to_learnr_pkg("path/to/data-camp-course",
+                       # Folder the new material will be converted and saved to.
+                       "path/to/new-learnr-package",
+                       "Your name here")
+```
+
+  - **Note**: This roughly converts your DataCamp material to the learnr
+    tutorial format… it is *not* perfect\!\! So please make sure to look
+    through all your material before publicizing\!
+  - Also *note*, so far the slides only only converted to a text
+    document, they are not slides. If you have the original videos of
+    the slides, you can insert the video link into the chapter
+    documents, which will then include the video files for you in the
+    tutorial.
