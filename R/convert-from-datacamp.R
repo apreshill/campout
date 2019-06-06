@@ -13,101 +13,81 @@
 #' @examples
 #' \dontrun{
 #' Temp <- tempdir()
+#' # Run if your DC course is in the working directory
 #' datacamp_to_learnr_pkg(lrnr_pkg_path = Temp)
+#' # Run if your course is somewhere else
+#' datacamp_to_learnr_pkg("~/Documents/data-camp-course/",
+#'                        lrnr_pkg_path = Temp)
 #' }
 datacamp_to_learnr_pkg <-
-  function(dc_path = ".", lrnr_pkg_path = ".",
-           author_name = "Default") {
-    # TODO: Check if working dir is a repo
-    # TODO: Check if any uncommitted files are present
-    # TODO: Check that the necessary files exist
-    # TODO: Check if a "original materials" git branch exists
+  function(dc_path = ".", lrnr_pkg_path,
+           author_name = "YOUR NAME") {
 
-    # options(usethis.quiet = TRUE)
+    old <- options(stringsAsFactors = FALSE)
+    options(usethis.quiet = TRUE)
+    on.exit(options(old), add = TRUE)
 
-    if (is.null(dc_path)) {
-      dc_path = getwd()
-    }
-    #
-    # # For accidental sourcing... -_-
-    # stop()
-    #
-    # # Checking if project is under git and if changes are not committed
     if (!in_repository(dc_path))
-      stop("Please make that the files are under Git version control.")
+      rlang::abort("Please make that the files are under Git version control.")
     if (length(status(dc_path)$unstaged) != 0)
-      stop("Please make sure to commit changes before running.")
-    #
-    # # Listing all files -------------------------------------------------------
+      rlang::abort("Please make sure to commit changes before converting the course.")
 
+    pkgname <- fs::path_file(lrnr_pkg_path)
+    if (str_detect(pkgname, "( |-|_)"))
+      rlang::abort("The name of the new learnr package shouldn't have any spaces, dashes, or underscores")
 
-    pkgname <- basename(lrnr_pkg_path)
-    pkgname <- paste(pkgname, ".Rproj", sep = "")
+    # Create learnr package
+    usethis::create_package(lrnr_pkg_path, open = FALSE)
+    print("here?")
 
-    all_files <-
-      fs::dir_ls(dc_path,
-             recurse = TRUE,
-             type = "file",
-             all = TRUE)
+    chapter_files <- fs::dir_ls(
+      path = dc_path,
+      regexp = "chapter[1-9]\\.md",
+      recurse = TRUE
+    )
+    new_tutorial_name <- fs::path_ext_remove(fs::path_file(chapter_files))
+    new_tutorial_title <- new_tutorial_name %>%
+      str_replace("(chapter)", "\\1 ") %>%
+      str_to_title()
 
-
-
-    # # Create as package -------------------------------------------------------
-    ### this will fail if there are dashes, in the name, could provide an earlier error
-    usethis::create_package(lrnr_pkg_path)
-
-    chapters <- str_subset(all_files, "chapter.\\.md")
-
-    ### Gets chapter names
-    chapters_name <- fs::path_ext_remove(fs::path_file(chapters))
-
-
-    ## creates demo files
-    withr::with_dir(lrnr_pkg_path, {
-      sapply(chapters_name,
-             usethis::use_tutorial,
-             open = F,
-             title = "Demo")
-    } )
-
-
-    ## Overwrites demo files
-    new_chapter_path <-
-      file.path(lrnr_pkg_path, "inst/tutorials/", fs::path_file(chapters)) %>%
-      str_replace("\\.md", ".Rmd")
-    fs::file_move(chapters, new_chapter_path)
+    req_file <- fs::dir_ls(dc_path, regexp = "requirements\\.R$")
+    dependencies <- extract_rpkg_deps(req_file)
 
     withr::with_dir(lrnr_pkg_path, {
-      usethis::use_build_ignore("slides")
-      usethis::use_tidy_versions()
-      usethis::use_github()
+      purrr::walk2(new_tutorial_name,
+                   new_tutorial_title,
+                   usethis::use_tutorial,
+                   open = FALSE)
+      # Not sure about setting GitHub right away.
+      # usethis::use_github()
       usethis::use_ccby_license(name = author_name)
       usethis::use_blank_slate()
+      add_deps_imports(dependencies)
+      usethis::use_tidy_versions()
     })
+    print("here later?")
+
+    converted_chapter_files <-
+      purrr::map(chapter_files, dc_chapter_to_lrnr_tutorial)
+    new_tutorial_path <-
+      fs::dir_ls(lrnr_pkg_path, regexp = "chapter[1-9]", recurse = TRUE)
+    purrr::walk2(converted_chapter_files,
+                 new_tutorial_path,
+                 ~ readr::write_lines(.x, .y))
+
+    copy_datasets_dir_to_lrnr(dc_path, lrnr_pkg_path)
+
+    copy_slides_dir_to_lrnr(dc_path, lrnr_pkg_path)
+
   }
 
-dc_to_lrnr_copy_converted_chpts <- function(.dc_path, .lrnr_pkg_path) {
-  chapter_files <- fs::dir_ls(path = .dc_path, regexp = "chapter[1-9]\\.md")
-  new_tutorial_name <- fs::path_ext_remove(basename(chapter_files))
-  converted_chapter_files <- purrr::map(chapter_files, dc_chapter_to_lrnr_tutorial)
-
-  withr::with_dir(.lrnr_pkg_path, {
-    usethis::use_tutorial(new_tutorial_name, open = FALSE)
-    new_tutorial_path <- fs::dir_ls(".", regexp = "chapter[1-9]", recurse = TRUE)
-  })
-
-  purrr::walk2(converted_chapter_files, new_tutorial_path,
-               ~ readr::write_lines(.x, .y))
-  return(invisible(NULL))
-}
-
-dc_to_lrnr_copy_slides_dir <- function(.dc_path, .lrnr_pkg_path) {
+copy_slides_dir_to_lrnr <- function(.dc_path, .lrnr_pkg_path) {
   dc_slides_dir <- fs::path(.dc_path, "slides")
   lrnr_slides_dir <- fs::path(.lrnr_pkg_path, "inst", "tutorials", "slides")
   fs::dir_copy(dc_slides_dir, lrnr_slides_dir)
 }
 
-dc_to_lrnr_copy_datasets_dir <- function(.dc_path, .lrnr_pkg_path) {
+copy_datasets_dir_to_lrnr <- function(.dc_path, .lrnr_pkg_path) {
   dc_dataset_dir <- fs::path(.dc_path, "datasets")
   lrnr_dataset_dir <- fs::path(.lrnr_pkg_path, "inst", "tutorials", "datasets")
   fs::dir_copy(dc_dataset_dir, lrnr_dataset_dir)
